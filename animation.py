@@ -26,7 +26,7 @@ class Animation:
 class TextAnimation(Animation):
     def __init__(self, starting_tick: int, x: int, y: int, text: str, font_size: int, font_color: tuple[int, int, int] | str, draw: Draw):
         super().__init__(
-            starting_tick, FPS,
+            starting_tick, TPS,
             lambda tick: draw.text(font_color, text, x, y, font_size, centering=True)
         )
 
@@ -34,7 +34,7 @@ class TextAnimation(Animation):
 class MovingTextAnimation(Animation):
     def __init__(self, starting_tick: int, start: tuple[float, float], end: tuple[float, float], text: str, font_size: int, font_color: tuple[int, int, int] | str, draw: Draw):
         super().__init__(
-            starting_tick, FPS,
+            starting_tick, TPS,
             lambda tick: draw.text(
                 font_color, text,
                 start[0] + (end[0] - start[0]) * tick / self.duration,
@@ -56,7 +56,7 @@ class HealthBarAnimation(Animation):
         self.dataset: list[tuple[int, float]] = [dataset[0]]
 
         for row in dataset[1:]:
-            self.dataset.append((row[0] - FPS, self.dataset[-1][1]))
+            self.dataset.append((row[0] - TPS, self.dataset[-1][1]))
             self.dataset.append(row)
 
     def draw_bar(self, tick: int):
@@ -72,11 +72,11 @@ class HealthBarAnimation(Animation):
         else:
             return
 
-        ratio: float = end_ratio + abs(start_ratio - end_ratio) * (end_tick - tick) / FPS * (-1)**(start_ratio < end_ratio)
+        ratio: float = end_ratio + abs(start_ratio - end_ratio) * (end_tick - tick) / TPS * (-1) ** (start_ratio < end_ratio)
 
         self.app_draw.health_bar(
-            self.x, self.y, 30, self.height, ratio,
-            white=tick - start[0] < FPS / 4 and (tick - start[0]) % (FPS / 16) < FPS / 32 and start[1] > end[1]
+            self.x, self.y, ratio, height=self.height,
+            white=tick - start[0] < TPS / 4 and (tick - start[0]) % (TPS / 16) < TPS / 32 and start[1] > end[1]
         )
 
 
@@ -108,7 +108,7 @@ class MovingFramedAnimation(Animation):
     def __init__(self, starting_tick: int, animation_path: str, start: tuple[float, float], end: tuple[float, float], width: float, height: float, app_draw: Draw):
         super().__init__(
             starting_tick,
-            FPS,
+            TPS,
             lambda tick: self.app_draw.image(
                 self.frames[int(tick / 8) % len(self.frames)],
                 start[0] + (end[0] - start[0]) * tick / self.duration,
@@ -126,3 +126,40 @@ class MovingFramedAnimation(Animation):
                 scaled_frame: Surface = pygame.transform.scale(raw_frame, (width, height))
 
                 self.frames.append(scaled_frame)
+
+
+class MovingEntityAnimation(Animation):
+    def __init__(self, locations: list[tuple[int, tuple[int, int]]], size: int, entity_role: str, app_draw: Draw):
+        super().__init__(0, None, lambda tick: self.draw_entity(tick))
+
+        self.size: float = size
+        self.app_draw: Draw = app_draw
+        self.entity_role: str = entity_role
+
+        self.locations: list[tuple[int, tuple[int, int]]] = [locations[0]]
+
+        for row in locations[1:]:
+            self.locations.append((row[0] - TPS, self.locations[-1][1]))
+            self.locations.append(row)
+
+    def draw_entity(self, tick: int):
+        for i in range(len(self.locations) - 1):
+            start: tuple[int, tuple[int, int]] = self.locations[i]
+            end: tuple[int, tuple[int, int]] = self.locations[i + 1]
+
+            if start[0] <= tick < end[0]:
+                start_x: int = start[1][0]
+                start_y: int = start[1][1]
+
+                end_x: int = end[1][0]
+                end_y: int = end[1][1]
+
+                end_tick = end[0]
+                break
+        else:
+            return
+
+        x: float = start_x + (end_x - start_x) * (end_tick - tick)
+        y: float = start_y + (end_y - start_y) * (end_tick - tick)
+
+        self.app_draw.entity(x, y, self.entity_role, tick=tick)

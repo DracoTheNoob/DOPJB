@@ -25,7 +25,7 @@ BATTLE_PHASES: list[str] = [
 
 PLAYER_PHASES: list[str] = [PHASE_PLAYER_1, PHASE_PLAYER_2, PHASE_PLAYER_3, PHASE_PLAYER_4, PHASE_PLAYER_5]
 
-PHASE_DURATION: int = int(2 * FPS)
+PHASE_DURATION: int = int(2 * TPS)
 
 MAGE_SPELLS_DIRECTORY: str = 'src/animations/mage/'
 
@@ -125,10 +125,10 @@ class Fight:
         new_ratio: float = target.health / target.stats[STAT_HEALTH]
 
         if old_ratio != new_ratio:
-            if self.health_animation_ticks[j][-1][0] == self.ticks + 2*FPS:
+            if self.health_animation_ticks[j][-1][0] == self.ticks + 2*TPS:
                 self.health_animation_ticks[j][-1] = (self.health_animation_ticks[j][-1][0], new_ratio)
             else:
-                self.health_animation_ticks[j].append((self.ticks + 2 * FPS, new_ratio))
+                self.health_animation_ticks[j].append((self.ticks + 2 * TPS, new_ratio))
 
         if healing:
             print_heal(life_change, critical, source, target)
@@ -145,7 +145,7 @@ class Fight:
 
         if self.entities[i].role == ROLE_UNDEAD:
             self.animations.append(FramedAnimation(
-                self.ticks + FPS//2,
+                self.ticks + TPS // 2,
                 'src/animations/undead',
                 pos_j[0] + size_j / 2,
                 pos_j[1] + size_j / 2,
@@ -157,7 +157,7 @@ class Fight:
             self.sounds[self.ticks].append(sound('src/sounds/undead.mp3'))
         elif self.entities[i].role == ROLE_WOLF:
             self.animations.append(FramedAnimation(
-                self.ticks + FPS // 2,
+                self.ticks + TPS // 2,
                 'src/animations/wolf',
                 pos_j[0] + size_j / 2,
                 pos_j[1] + size_j / 2,
@@ -172,14 +172,14 @@ class Fight:
 
             for i in range(3 if critical else 1):
                 self.animations.append(FramedAnimation(
-                    self.ticks + FPS//2 + i*FPS//5,
+                    self.ticks + TPS // 2 + i * TPS // 5,
                     'src/animations/slash',
-                    pos_j[0] + size_j / 2 + i*randint(-30, 30),
-                    pos_j[1] + size_j / 2 + i*randint(-30, 30),
+                    pos_j[0] + size_j / 2 + i * randint(-30, 30),
+                    pos_j[1] + size_j / 2 + i * randint(-30, 30),
                     size, size, self.draw, loops=1
                 ))
 
-                self.sounds[self.ticks + FPS//2 + i*FPS//5].append(sound('src/sounds/sword.mp3', .8))
+                self.sounds[self.ticks + TPS // 2 + i * TPS // 5].append(sound('src/sounds/sword.mp3', .8))
         elif self.entities[i].role == ROLE_MAGE and not healing:
             spell_animation, spell_sound = pick_mage_spell()
             lightning: bool = spell_animation.endswith('lightning')
@@ -188,18 +188,18 @@ class Fight:
                 off: int = ENEMY_SIZE // 5
 
                 self.animations.append(FramedAnimation(
-                    self.ticks + i*FPS//5, spell_animation,
+                    self.ticks + i * TPS // 5, spell_animation,
                     pos_j[0] + size_j / 2 + (randint(-off, off) if lightning else 0),
                     pos_j[1] + size_j / 2 + (randint(-off, 0) if lightning else 0),
                     ENEMY_SIZE, ENEMY_SIZE, self.draw, loops=1
                 ))
 
-                self.sounds[self.ticks + i*FPS//5].append(sound(spell_sound, 1 if lightning else .4))
+                self.sounds[self.ticks + i * TPS // 5].append(sound(spell_sound, 1 if lightning else .4))
         elif self.entities[i].role == ROLE_DRAGON:
             for i in range(5 * (2 if critical else 1)):
                 self.animations.append(FramedAnimation(
-                    self.ticks + i*FPS//10, 'src/animations/dragon',
-                    pos_j[0] + size_j / 2 + (5 - i)*50,
+                    self.ticks + i * TPS // 10, 'src/animations/dragon',
+                    pos_j[0] + size_j / 2 + (5 - i) * 50,
                     pos_j[1] + size_j / 2 + randint(-10, 10),
                     ENEMY_SIZE, ENEMY_SIZE, self.draw, loops=1
                 ))
@@ -211,9 +211,9 @@ class Fight:
 
                 for i in range(4):
                     self.animations.append(FramedAnimation(
-                        self.ticks + i*FPS//5, 'src/animations/heal',
+                        self.ticks + i * TPS // 5, 'src/animations/heal',
                         pos_j[0] + size_j / 2, pos_j[1] + size_j / 2,
-                        size * 1.1**i, size * 1.1**i, self.draw, loops=1
+                        size * 1.1 ** i, size * 1.1 ** i, self.draw, loops=1
                     ))
 
                 self.sounds[self.ticks].append(sound('src/sounds/healing.wav', .3))
@@ -240,13 +240,13 @@ class Fight:
             size: int = ENEMY_SIZE if j == -1 else PLAYER_SIZE
 
             self.animations.append(FramedAnimation(
-                self.ticks - FPS//2, 'src/animations/dodge',
+                self.ticks - TPS // 2, 'src/animations/dodge',
                 pos_j[0] + size_j / 2, pos_j[1] + size_j / 2,
                 size, size, self.draw, loops=1
             ))
 
             for i in range(3):
-                self.sounds[self.ticks + FPS + i*FPS//10].append(sound('src/sounds/dodge.wav'))
+                self.sounds[self.ticks + TPS + i * TPS // 10].append(sound('src/sounds/dodge.wav'))
 
     def handle_heal(self, i: int, j: int) -> list[Animation]:
         return self.handle_life_change(True, i, j)
@@ -267,7 +267,7 @@ class Fight:
 
     def compute(self) -> tuple[list[Animation], dict[int: list[Sound]]] | bool:
         self.animations = []
-        self.sounds = {i: [] for i in range(FPS * 60 * 10)}
+        self.sounds = {i: [] for i in range(TPS * 60 * 10)}
 
         while self.nb_alive > 0 and self.enemy.health > 0:
             self.current_phase = self.get_next_phase(self.current_phase)

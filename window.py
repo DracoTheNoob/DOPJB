@@ -1,7 +1,7 @@
 from rpg import *
 
-FPS: int = 100
-TICK_DURATION: float = 1 / FPS
+TPS: int = 100
+TICK_DURATION: float = 1 / TPS
 
 WINDOW_WIDTH: int = 1920
 WINDOW_HEIGHT: int = 1080
